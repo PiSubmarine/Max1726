@@ -3,6 +3,8 @@
 #include "PiSubmarine/RegUtils.h"
 #include "PiSubmarine/Max1726/Units.h"
 #include "PiSubmarine/Api/Internal/I2C/DriverConcept.h"
+#include <bitset>
+#include <cstdint>
 
 namespace PiSubmarine::Max1726
 {
@@ -100,4 +102,241 @@ namespace PiSubmarine::Max1726
 		AtAvCap = 0xDF
 	};
 
-}
+	enum class Status : uint16_t
+	{
+		PowerOnReset = (1 << 1),
+		MinimumCurrentAlert = (1 << 2),
+		BatteryPresent = (1 << 3),
+		MaximumCurrentAlert = (1 << 6),
+		StateOfChargeChanged = (1 << 7),
+		MinimumVoltageAlert = (1 << 8),
+		MinimumTemperatureAlert = (1 << 9),
+		MinimumStateOfCharge = (1 << 10),
+		MaximumVoltageAlert = (1 << 12),
+		MaximumTemperatureAlert = (1 << 13),
+		MaximumStateOfChargeAlert = (1 << 14),
+		BatteryRemoved = (1 << 15)
+	};
+
+	constexpr static size_t MemorySize = 225;
+
+	template<PiSubmarine::Api::Internal::I2C::DriverConcept I2CDriver>
+	class Device
+	{
+	public:
+		constexpr static uint8_t Address = 0x36;
+
+		Device(I2CDriver& driver) : m_Driver(driver)
+		{
+
+		}
+
+		/// <summary>
+		/// Returns true if there is a pending read/write I2C transation.
+		/// </summary>
+		/// <returns>True if transaction not finished.</returns>
+		bool IsTransactionInProgress()
+		{
+			return m_IsTransactionInProgress;
+		}
+
+		/// <summary>
+		/// Returns true if previous transaction failed. Cleared to false upon new Read or Write.
+		/// </summary>
+		/// <returns>True if has error.</returns>
+		bool HasError()
+		{
+			return m_HasError;
+		}
+
+		/// <summary>
+		/// Reads all registers.
+		/// </summary>
+		/// <returns>True if transaction was successfully started.</returns>
+		bool Read()
+		{
+			std::bitset<MemorySize> regs;
+			regs.set();
+			return Read(0, m_MemoryBuffer.data(), m_MemoryBuffer.size(), regs);
+		}
+
+		/// <summary>
+		/// Reads specific register.
+		/// </summary>
+		/// <param name="reg">Register offset</param>
+		/// <returns>True if transaction was successfully started.</returns>
+		bool Read(RegOffset reg)
+		{
+			std::bitset<MemorySize> regs;
+			regs.set(RegUtils::ToInt(reg));
+			constexpr size_t regSize = 2;
+			return Read(static_cast<uint8_t>(reg), m_MemoryBuffer.data() + static_cast<size_t>(reg), regSize, regs);
+		}
+
+		/// <summary>
+		/// Writes specific register.
+		/// </summary>
+		/// <param name="reg">Register offset</param>
+		/// <returns>True if transaction was successfully started.</returns>
+		bool Write(RegOffset reg)
+		{
+			constexpr size_t regSize = 2;
+			std::bitset<MemorySize> regs;
+			regs.set(RegUtils::ToInt(reg));
+			return Write(static_cast<uint8_t>(reg), m_MemoryBuffer.data() + static_cast<size_t>(reg), regSize, regs);
+		}
+
+		/// <summary>
+		/// Writes all dirty registers in a sequence of transactions.
+		/// </summary>
+		/// <returns>True if transaction was successfully started. False if there was an error or no register was dirty.</returns>
+		bool WriteDirty()
+		{
+			if (m_IsTransactionInProgress)
+			{
+				return false;
+			}
+
+			m_HasError = false;
+			m_IsTransactionInProgress = true;
+
+			return WriteDirtyInternal(RegOffset{ 0 });
+		}
+
+		bool HasDirtyRegisters()
+		{
+			return m_DirtyRegs.any();
+		}
+
+		Status GetStatus() const
+		{
+			return RegUtils::Read<Status, std::endian::big>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Status), 0, 16);
+		}
+
+		void SetStatus(Status value)
+		{
+			RegUtils::Write<uint8_t, std::endian::big>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Status), 0, 16);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::Status)] = true;
+		}
+
+		
+	private:
+		I2CDriver& m_Driver;
+		std::array<uint8_t, MemorySize> m_MemoryBuffer{ 0 };
+		bool m_IsTransactionInProgress = false;
+		bool m_HasError = false;
+		std::bitset<MemorySize> m_DirtyRegs{ 0 };
+
+		bool Read(uint8_t offset, uint8_t* data, size_t size, const std::bitset<MemorySize>& regs)
+		{
+			if (m_IsTransactionInProgress)
+			{
+				return false;
+			}
+
+			m_HasError = !m_Driver.Write(Address, &offset, 1);
+			if (m_HasError)
+			{
+				return false;
+			}
+
+			bool transactionStarted = m_Driver.ReadAsync(Address, data, size, [this, regs](uint8_t cbAddress, bool cbOk) {ReadCallback(cbAddress, regs, cbOk); });
+			if (transactionStarted)
+			{
+				m_IsTransactionInProgress = true;
+			}
+
+			return transactionStarted;
+		}
+
+		bool Write(uint8_t offset, uint8_t* data, size_t size, const std::bitset<MemorySize>& regs)
+		{
+			if (m_IsTransactionInProgress)
+			{
+				return false;
+			}
+
+			m_HasError = false;
+
+			std::vector<uint8_t> buffer;
+			buffer.resize(size + 1);
+			buffer[0] = offset;
+			memcpy(buffer.data() + 1, data, size);
+
+			bool transactionStarted = m_Driver.WriteAsync(Address, buffer.data(), buffer.size(), [this, regs](uint8_t cbAddress, bool cbOk) {WriteCallback(cbAddress, regs, cbOk); });
+			if (transactionStarted)
+			{
+				m_IsTransactionInProgress = true;
+			}
+
+			return transactionStarted;
+		}
+
+		void ReadCallback(uint8_t deviceAddress, std::bitset<MemorySize> regs, bool ok)
+		{
+			m_HasError = !ok;
+			m_IsTransactionInProgress = false;
+
+			if (ok)
+			{
+				m_DirtyRegs &= ~regs;
+			}
+		}
+
+		void WriteCallback(uint8_t deviceAddress, std::bitset<MemorySize> regs, bool ok)
+		{
+			m_HasError = !ok;
+			m_IsTransactionInProgress = false;
+
+			if (ok)
+			{
+				m_DirtyRegs &= ~regs;
+			}
+		}
+
+		bool WriteDirtyInternal(RegOffset regNext)
+		{
+			for (size_t i = RegUtils::ToInt(regNext); i < m_DirtyRegs.size(); i++)
+			{
+				if (!m_DirtyRegs[i])
+				{
+					continue;
+				}
+				RegOffset reg = static_cast<RegOffset>(i);
+
+				uint8_t regSize = GetRegisterSize(reg);
+				std::vector<uint8_t> buffer;
+				buffer.resize(regSize + 1);
+				buffer[0] = i;
+				memcpy(buffer.data() + 1, m_ChargerMemoryBuffer.data() + i, regSize);
+				return m_Driver.WriteAsync(Address, buffer.data(), buffer.size(), [this, reg](uint8_t cbAddress, bool cbOk) {WriteDirtyCallback(cbAddress, reg, cbOk); });
+			}
+			return false;
+		}
+
+		void WriteDirtyCallback(uint8_t deviceAddress, RegOffset reg, bool ok)
+		{
+			if (!ok)
+			{
+				m_HasError = true;
+				m_IsTransactionInProgress = false;
+				return;
+			}
+
+			m_HasError = false;
+			m_DirtyRegs[RegUtils::ToInt(reg)] = false;
+			if (m_DirtyRegs == 0)
+			{
+				m_IsTransactionInProgress = false;
+				return;
+			}
+
+			if (!WriteDirtyInternal(static_cast<RegOffset>(RegUtils::ToInt(reg) + 1)))
+			{
+				m_HasError = true;
+				m_IsTransactionInProgress = false;
+				return;
+			}
+		}
+	};
+};

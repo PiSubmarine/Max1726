@@ -9,8 +9,9 @@
 #include <condition_variable>
 #include "PiSubmarine/Api/Internal/I2C/Callback.h"
 #include "PiSubmarine/Api/Internal/I2C/DriverConcept.h"
+#include "PiSubmarine/Max1726/Max1726.h"
 
-namespace PiSubmarine::Bq25792
+namespace PiSubmarine::Max1726
 {
 
 	struct I2CRequest
@@ -27,7 +28,7 @@ namespace PiSubmarine::Bq25792
 	class I2CDriverMock
 	{
 	public:
-		I2CDriverMock(std::array<uint8_t, 0x49>& data) : m_Data(data)
+		I2CDriverMock(std::array<uint8_t, Max1726::MemorySize>& data) : m_Data(data)
 		{
 			m_WorkerThread = std::jthread([this](std::stop_token st) {
 				this->WorkerMethod(st);
@@ -96,7 +97,7 @@ namespace PiSubmarine::Bq25792
 		}
 
 	private:
-		std::array<uint8_t, 0x49>& m_Data;
+		std::array<uint8_t, Max1726::MemorySize>& m_Data;
 		std::chrono::milliseconds m_TransactionDelay = std::chrono::milliseconds(250);
 		I2CRequest m_Request{ 0 };
 		bool m_SimalateError = false;
