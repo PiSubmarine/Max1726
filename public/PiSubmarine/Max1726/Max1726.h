@@ -215,7 +215,7 @@ namespace PiSubmarine::Max1726
 
 		void SetStatus(Status value)
 		{
-			RegUtils::Write<uint8_t, std::endian::big>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Status), 0, 16);
+			RegUtils::Write<Status, std::endian::big>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Status), 0, 16);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::Status)] = true;
 		}
 
