@@ -308,7 +308,7 @@ namespace PiSubmarine::Max1726
 				std::vector<uint8_t> buffer;
 				buffer.resize(regSize + 1);
 				buffer[0] = i;
-				memcpy(buffer.data() + 1, m_ChargerMemoryBuffer.data() + i, regSize);
+				memcpy(buffer.data() + 1, m_MemoryBuffer.data() + i, regSize);
 				return m_Driver.WriteAsync(Address, buffer.data(), buffer.size(), [this, reg](uint8_t cbAddress, bool cbOk) {WriteDirtyCallback(cbAddress, reg, cbOk); });
 			}
 			return false;
