@@ -304,7 +304,7 @@ namespace PiSubmarine::Max1726
 				}
 				RegOffset reg = static_cast<RegOffset>(i);
 
-				uint8_t regSize = GetRegisterSize(reg);
+				constexpr uint8_t regSize = 2;
 				std::vector<uint8_t> buffer;
 				buffer.resize(regSize + 1);
 				buffer[0] = i;
