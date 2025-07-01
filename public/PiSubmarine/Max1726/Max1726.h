@@ -535,7 +535,7 @@ namespace PiSubmarine::Max1726
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::VEmpty)] = true;
 		}
 
-		MicroVolts GetTerminationCurrent() const
+		MicroVolts GetEmptyVoltage() const
 		{
 			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 0, 16);
 			return MicroVolts::FromRaw(value);
