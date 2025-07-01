@@ -544,13 +544,13 @@ namespace PiSubmarine::Max1726
 		void SetRecoveryVoltage(MicroVolts valueUv)
 		{
 			uint16_t value = valueUv.GetMicroVolts() / 40000;
-			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 7, 16);
+			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 0, 7);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::VEmpty)] = true;
 		}
 
 		MicroVolts GetRecoveryVoltage() const
 		{
-			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 7, 16);
+			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 0, 7);
 			return MicroVolts(value * 40000);
 		}
 
