@@ -14,15 +14,18 @@ namespace PiSubmarine::Max1726
 
     TEST(MicroAmperesTest, FromAndToRaw)
     {
-        constexpr uint8_t positive = 0b00001100;
-        constexpr uint8_t twoComp = 0b10001100;
-        constexpr int8_t decodedTwoComp = static_cast<int8_t>(twoComp);
+        constexpr int64_t rSense = 10000;
+        constexpr double uAFactor = 1.5625 * rSense / 100;
 
         for (int32_t max1726Value = std::numeric_limits<int16_t>::min(); max1726Value <= std::numeric_limits<int16_t>::max(); max1726Value += 1)
         {
             MicroAmperes current = MicroAmperes::FromRaw(max1726Value);
             int16_t roundtrip = current.ToRaw();
             ASSERT_EQ(roundtrip, max1726Value);
+
+            double uAD = max1726Value * uAFactor;
+            auto uAi = current.GetMicroAmperes();
+            EXPECT_NEAR(static_cast<double>(uAi), uAD, 1.0);
         }
     }
 
@@ -38,21 +41,34 @@ namespace PiSubmarine::Max1726
         EXPECT_EQ(a.GetMicroAmperes(), 1000);
     }
 
+    TEST(MicroAmperesTest, FromRaw)
+    {
+        constexpr double uVFactor = 78.125 / 1000000;
+        for (int32_t max1726Value = std::numeric_limits<int16_t>::min(); max1726Value <= std::numeric_limits<int16_t>::max(); max1726Value += 1)
+        {
+            MicroAmperes current = MicroAmperes::FromRaw(max1726Value);
+            int16_t roundtrip = current.ToRaw();
+            ASSERT_EQ(roundtrip, max1726Value);
+        }
+    }
+
     // ---------------------
     // MicroVolts Tests
     // ---------------------
 
     TEST(MicroVoltsTest, FromAndToRaw)
     {
+        constexpr double uVFactor = 1.0/128.0 * 10000;
+
         for (uint16_t raw = 0; raw < 65535; raw += 1)
         {
+            double uVD = raw * uVFactor;
             MicroVolts v = MicroVolts::FromRaw(raw);
             uint16_t roundtrip = v.ToRaw();
-            if (roundtrip != raw)
-            {
-                EXPECT_TRUE(false);
-            }
+            
             EXPECT_EQ(roundtrip, raw);
+            auto uVi = v.GetMicroVolts();
+            EXPECT_NEAR(static_cast<double>(uVi), uVD, 1.0);
         }
     }
 

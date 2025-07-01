@@ -438,6 +438,40 @@ namespace PiSubmarine::Max1726
 			return MicroAmpereHours::FromRaw(value);
 		}
 
+		/// <summary>
+		/// Assumes 0.010 Ohm sense resistor.
+		/// </summary>
+		/// <param name="valueMah">Battery capacity in mAh</param>
+		void SetTerminationCurrent(MicroAmperes valueMa)
+		{
+			int16_t value = valueMa.ToRaw();
+			RegUtils::Write<int16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::IChgTerm), 0, 16);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::IChgTerm)] = true;
+		}
+
+		/// <summary>
+		/// Assumes 0.010 Ohm sense resistor.
+		/// </summary>
+		/// <returns>Battery capacity in mAh</returns>
+		MicroAmperes GetTerminationCurrent() const
+		{
+			int16_t value = RegUtils::Read<int16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::DesignCap), 0, 16);
+			return MicroAmperes::FromRaw(value);
+		}
+
+		void SetEmptyVoltage(MicroVolts valueUv)
+		{
+			uint16_t value = valueUv.ToRaw();
+			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 0, 16);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::VEmpty)] = true;
+		}
+
+		MicroVolts GetTerminationCurrent() const
+		{
+			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 0, 16);
+			return MicroVolts::FromRaw(value);
+		}
+
 	private:
 		I2CDriver& m_Driver;
 		std::array<uint8_t, MemorySize> m_MemoryBuffer{ 0 };

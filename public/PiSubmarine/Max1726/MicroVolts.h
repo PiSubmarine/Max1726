@@ -23,7 +23,7 @@ namespace PiSubmarine::Max1726
         static constexpr MicroVolts FromRaw(uint16_t raw)
         {
             // 1 LSB = 78.125 uV = 6250 / 80
-            uint64_t value = ((raw * 6250 + 40) << BitShift) / 80;
+            uint64_t value = ((raw * 6250) << BitShift) / 80;
             MicroVolts result;
             result.value = value;
             return result;

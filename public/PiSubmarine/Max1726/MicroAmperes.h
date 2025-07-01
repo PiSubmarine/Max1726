@@ -20,7 +20,7 @@ namespace PiSubmarine::Max1726
 
         static constexpr MicroAmperes FromRaw(int16_t raw)
         {
-            int64_t uv = static_cast<int64_t>(raw) * 15625; // in nV
+            int64_t uv = static_cast<int64_t>(raw) * 1562500; // in nV
             int64_t ua = (uv * (1 << BitShift)) / RSenseMicroOhms;
             MicroAmperes result;
             result.value = ua;
@@ -29,7 +29,7 @@ namespace PiSubmarine::Max1726
 
         constexpr int16_t ToRaw() const
         {
-            constexpr int64_t scale = 15625;
+            constexpr int64_t scale = 1562500;
             int64_t uv = value * RSenseMicroOhms;
             int64_t raw = uv / scale;
             raw /= (1 << BitShift);
