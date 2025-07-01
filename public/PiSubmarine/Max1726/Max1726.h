@@ -140,6 +140,13 @@ namespace PiSubmarine::Max1726
 		SoftWakeup = 0x0090
 	};
 
+	enum class ModelId : uint8_t
+	{
+		Li = 0,
+		NcrOrNca = 2,
+		LiFePo = 6
+	};
+
 	constexpr static size_t MemorySize = 225;
 
 	template<PiSubmarine::Api::Internal::I2C::DriverConcept I2CDriver>
@@ -256,7 +263,18 @@ namespace PiSubmarine::Max1726
 		/// <returns>True if initialization was successfull.</returns>
 		bool InitBlocking(WaitFunc waitFunc, MicroAmpereHours designCapacity, MicroAmperes terminationCurrent, MicroVolts emptyVoltage)
 		{
-			auto status = Read(RegOffset::Status);
+
+			if (!Read(RegOffset::Status))
+			{
+				return false;
+			}
+			if (!WaitForTransaction(waitFunc))
+			{
+				return false;
+			}
+
+			auto status = GetStatus();
+
 			if (status & Status::PowerOnReset)
 			{
 				while (true)
@@ -271,9 +289,10 @@ namespace PiSubmarine::Max1726
 					}
 
 					auto fstat = GetFStat();
-					if (!(fstat & FStat::DataNotReady))
+					bool dnr = fstat & FStat::DataNotReady;
+					if (!dnr)
 					{
-						continue;
+						break;
 					}
 					waitFunc(10ms);
 				}
@@ -297,9 +316,11 @@ namespace PiSubmarine::Max1726
 
 				// EZ Config
 				SetDesignCapacity(designCapacity);
-				// SetIchgTerm
-				// SetVEmpty
-				// SetModelCFG
+				SetTerminationCurrent(terminationCurrent);
+				SetEmptyVoltage(emptyVoltage);
+				SetModelId(ModelId::Li);
+				SetHighChargeVoltage(false);
+				SetModelRefreshFlag(true);
 
 				if (!WriteDirty())
 				{
@@ -310,7 +331,23 @@ namespace PiSubmarine::Max1726
 					return false;
 				}
 
-				// Poll ModelCFG.Refresh
+				while (true)
+				{
+					if (!Read(RegOffset::ModelCfg))
+					{
+						return false;
+					}
+					if (!WaitForTransaction(waitFunc))
+					{
+						return false;
+					}
+
+					if (!IsModelRefreshFlagSet())
+					{
+						break;
+					}
+					waitFunc(10ms);
+				}
 				
 				RegUtils::Write<uint16_t, std::endian::little>(hibCfg, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
 				if (!WriteAndWait(RegOffset::HibCfg))
@@ -319,8 +356,39 @@ namespace PiSubmarine::Max1726
 				}				
 			}
 
-			// Clear Status::POR
-			// Verify Status::POR == 0
+			while (true)
+			{
+				if (!Read(RegOffset::Status))
+				{
+					return false;
+				}
+				if (!WaitForTransaction(waitFunc))
+				{
+					return false;
+				}
+				auto status = GetStatus();
+				if (!RegUtils::HasAnyFlag(status, Status::PowerOnReset))
+				{
+					break;
+				}
+
+				status &= RegUtils::operator~(Status::PowerOnReset);
+				SetStatus(status);
+				if (!WriteAndWait(RegOffset::Status, waitFunc))
+				{
+					return false;
+				}
+			}
+
+			if (!Read())
+			{
+				return false;
+			}
+			if (!WaitForTransaction(waitFunc))
+			{
+				return false;
+			}
+
 			return true;
 		}
 
@@ -470,6 +538,39 @@ namespace PiSubmarine::Max1726
 		{
 			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 0, 16);
 			return MicroVolts::FromRaw(value);
+		}
+
+		ModelId GetModelId() const
+		{
+			return RegUtils::Read<ModelId, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 4, 4);
+		}
+
+		void SetModelId(ModelId value) const
+		{
+			RegUtils::Write<ModelId, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 4, 4);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::ModelCfg)] = true;
+		}
+
+		bool IsHighChargeVoltage() const
+		{
+			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 10, 1);
+		}
+
+		void SetHighChargeVoltage(bool value) const
+		{
+			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 10, 1);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::ModelCfg)] = true;
+		}
+
+		bool IsModelRefreshFlagSet() const
+		{
+			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 15, 1);
+		}
+
+		void SetModelRefreshFlag(bool value) const
+		{
+			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 10, 1);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::ModelCfg)] = true;
 		}
 
 	private:
