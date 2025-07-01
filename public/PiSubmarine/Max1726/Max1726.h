@@ -224,7 +224,7 @@ namespace PiSubmarine::Max1726
 			}
 
 			WaitForTransaction(waitFunc);
-			return HasError();
+			return !HasError();
 		}
 
 		/// <summary>
