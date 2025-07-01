@@ -20,6 +20,11 @@ namespace PiSubmarine::Max1726
             return static_cast<int64_t>(temp);
         }
 
+        constexpr int32_t GetMilliVolts() const
+        {
+            return static_cast<int32_t>(GetMicroVolts());
+        }
+
         // Convert from raw 16-bit device value (0.078125 mV per LSB)
         static constexpr MicroVolts FromRaw(uint16_t raw)
         {
