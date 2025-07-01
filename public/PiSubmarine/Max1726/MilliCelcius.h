@@ -18,7 +18,7 @@ struct MilliCelsius
     // Convert from raw device value (uint16_t with 2's complement) to MilliCelsius
     static constexpr MilliCelsius FromRaw(int16_t raw)
     {
-        int64_t temp = (raw << BitShift) * 1000ULL / 256ULL;
+        int64_t temp = (static_cast<int64_t>(raw) << BitShift) * 1000LL / 256LL;
         MilliCelsius result;
         result.value = temp;
         return result;
@@ -27,7 +27,7 @@ struct MilliCelsius
     // Convert back to raw device value (uint16_t with 2's complement)
     constexpr int16_t ToRaw() const
     {
-        int64_t temp = (value * 256 / 1000) >> BitShift;
+        int64_t temp = (value * 256LL / 1000LL) >> BitShift;
         return static_cast<int16_t>(temp);
     }
 

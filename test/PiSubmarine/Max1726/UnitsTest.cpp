@@ -120,12 +120,16 @@ namespace PiSubmarine::Max1726
 
     TEST(MilliCelsiusTest, FromAndToRaw)
     {
+        constexpr double mCFactor = 1 / 256.0 * 1000;
         for (int raw = -32768; raw <= 32767; raw += 1024)
         {
-            uint16_t encoded = static_cast<uint16_t>(static_cast<int16_t>(raw));
-            MilliCelsius t = MilliCelsius::FromRaw(encoded);
-            uint16_t roundtrip = t.ToRaw();
-            EXPECT_EQ(roundtrip, encoded);
+            MilliCelsius t = MilliCelsius::FromRaw(raw);
+            int16_t roundtrip = t.ToRaw();
+            EXPECT_EQ(roundtrip, raw);
+
+            double mCD = mCFactor * raw;
+            auto mCi = t.GetMilliCelsius();
+            EXPECT_NEAR(static_cast<double>(mCi), mCD, 1);
         }
     }
 
