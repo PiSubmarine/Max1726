@@ -530,15 +530,28 @@ namespace PiSubmarine::Max1726
 
 		void SetEmptyVoltage(MicroVolts valueUv)
 		{
-			uint16_t value = valueUv.ToRaw();
-			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 0, 16);
+			uint16_t value = valueUv.GetMicroVolts() / 10000;
+			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 7, 16);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::VEmpty)] = true;
 		}
 
 		MicroVolts GetEmptyVoltage() const
 		{
-			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 0, 16);
-			return MicroVolts::FromRaw(value);
+			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 7, 16);
+			return MicroVolts(value * 10000);
+		}
+
+		void SetRecoveryVoltage(MicroVolts valueUv)
+		{
+			uint16_t value = valueUv.GetMicroVolts() / 40000;
+			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 7, 16);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::VEmpty)] = true;
+		}
+
+		MicroVolts GetRecoveryVoltage() const
+		{
+			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 7, 16);
+			return MicroVolts(value * 40000);
 		}
 
 		ModelId GetModelId() const
