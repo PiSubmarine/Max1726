@@ -274,7 +274,7 @@ namespace PiSubmarine::Max1726
 					return false;
 				}
 				waitFunc(std::chrono::milliseconds(500));
-				RegUtils::Write<uint16_t>(0x01, m_MemoryBuffer.data() + RegOffset::Config2, 0, 16);
+				RegUtils::Write<uint16_t>(0x01, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Config2), 0, 16);
 				waitFunc(std::chrono::milliseconds(500));
 			}
 
