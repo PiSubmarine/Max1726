@@ -1,13 +1,19 @@
 #pragma once
 
 #include "PiSubmarine/RegUtils.h"
-#include "PiSubmarine/Max1726/Units.h"
+#include "PiSubmarine/Max1726/MicroAmpereHours.h"
+#include "PiSubmarine/Max1726/MicroAmperes.h"
+#include "PiSubmarine/Max1726/MicroVolts.h"
+#include "PiSubmarine/Max1726/MilliCelcius.h"
 #include "PiSubmarine/Api/Internal/I2C/DriverConcept.h"
 #include <bitset>
 #include <cstdint>
+#include <functional>
 
 namespace PiSubmarine::Max1726
 {
+	using WaitFunc = std::function<void(std::chrono::milliseconds)>;
+
 	enum class RegOffset : uint8_t
 	{
 		Status = 0x00,
@@ -69,6 +75,7 @@ namespace PiSubmarine::Max1726
 		ConvgCfg = 0x49,
 		VFRemCap = 0x4A,
 		QH = 0x4D,
+		Command = 0x60,
 		Status2 = 0xB0,
 		Power = 0xB1,
 		ID = 0xB2,
@@ -116,6 +123,21 @@ namespace PiSubmarine::Max1726
 		MaximumTemperatureAlert = (1 << 13),
 		MaximumStateOfChargeAlert = (1 << 14),
 		BatteryRemoved = (1 << 15)
+	};
+
+	enum class FStat : uint16_t
+	{
+		DataNotReady = (1 << 0),
+		RelaxedCellDetectionLong = (1 << 6),
+		FullQualified = (1 << 7),
+		EmptyDetection = (1 << 8),
+		RelaxedCellDetectionShort = (1 << 9)
+	};
+
+	enum class Command : uint16_t
+	{
+		Clear = 0,
+		SoftWakeup = 0x0090
 	};
 
 	constexpr static size_t MemorySize = 225;
@@ -186,6 +208,17 @@ namespace PiSubmarine::Max1726
 			return Write(static_cast<uint8_t>(reg), m_MemoryBuffer.data() + static_cast<size_t>(reg), regSize, regs);
 		}
 
+		bool WriteAndWait(RegOffset reg, WaitFunc waitFunc)
+		{
+			if (!Write(reg))
+			{
+				return false;
+			}
+
+			WaitForTransaction(waitFunc);
+			return HasError();
+		}
+
 		/// <summary>
 		/// Writes all dirty registers in a sequence of transactions.
 		/// </summary>
@@ -208,6 +241,89 @@ namespace PiSubmarine::Max1726
 			return m_DirtyRegs.any();
 		}
 
+		bool WaitForTransaction(WaitFunc waitFunc)
+		{
+			while (IsTransactionInProgress())
+			{
+				waitFunc(0ms);
+			}
+			return HasError();
+		}
+
+		/// <summary>
+		/// Initializes MAX1726 in blocking mode. Must be called on every power cycle.
+		/// </summary>
+		/// <returns>True if initialization was successfull.</returns>
+		bool InitBlocking(WaitFunc waitFunc, MicroAmpereHours designCapacity, MicroAmperes terminationCurrent, MicroVolts emptyVoltage)
+		{
+			auto status = Read(RegOffset::Status);
+			if (status & Status::PowerOnReset)
+			{
+				while (true)
+				{
+					if (!Read(RegOffset::FStat))
+					{
+						return false;
+					}
+					if (!WaitForTransaction(waitFunc))
+					{
+						return false;
+					}
+
+					auto fstat = GetFStat();
+					if (!(fstat & FStat::DataNotReady))
+					{
+						continue;
+					}
+					waitFunc(10ms);
+				}
+
+				uint16_t hibCfg = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
+				SetCommand(Command::SoftWakeup);
+				if (!WriteAndWait(RegOffset::Command))
+				{
+					return false;
+				}
+				RegUtils::Write<uint16_t, std::endian::little>(0, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
+				if (!WriteAndWait(RegOffset::Command))
+				{
+					return false;
+				}
+				SetCommand(Command::Clear);
+				if (!WriteAndWait(RegOffset::Command))
+				{
+					return false;
+				}
+
+				// EZ Config
+				SetDesignCapacity(designCapacity);
+				// SetIchgTerm
+				// SetVEmpty
+				// SetModelCFG
+
+				if (!WriteDirty())
+				{
+					return false;
+				}
+				if (!WaitForTransaction(waitFunc))
+				{
+					return false;
+				}
+
+				// Poll ModelCFG.Refresh
+				
+				RegUtils::Write<uint16_t, std::endian::little>(hibCfg, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
+				if (!WriteAndWait(RegOffset::HibCfg))
+				{
+					return false;
+				}				
+			}
+
+			// Clear Status::POR
+			// Verify Status::POR == 0
+			return true;
+		}
+
 		Status GetStatus() const
 		{
 			return RegUtils::Read<Status, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Status), 0, 16);
@@ -219,7 +335,109 @@ namespace PiSubmarine::Max1726
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::Status)] = true;
 		}
 
+		FStat GetFStat() const
+		{
+			return RegUtils::Read<FStat, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::FStat), 0, 16);
+		}
+
+		uint8_t GetHibScalar() const
+		{
+			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 3);
+		}
+
+		/// <summary>
+		/// Sets the task period while in hibernate mode based on the following equation: Task Period = 351ms * 2^HibScalar
+		/// </summary>
+		/// <param name="value"></param>
+		void SetHibScalar(uint8_t value)
+		{
+			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 3);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::HibCfg)] = true;
+		}
+
+		uint8_t GetHibExitTime() const
+		{
+			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 3);
+		}
+
+		// Sets the required time period of consecutive current readings above the HibThreshold value before the IC exits hibernate and returns to active mode of operation
 		
+		/// <summary>
+		/// Sets the required time period of consecutive current readings above the HibThreshold value before the IC exits hibernate and returns to active mode of operation:
+		/// Exit Time = (HibExitTime + 1) * 702ms * 2^HibScalar
+		/// </summary>
+		/// <param name="value"></param>
+		void SetHibExitTime(uint8_t value)
+		{
+			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 3, 2);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::HibCfg)] = true;
+		}
+
+		uint8_t GetHibThreshold() const
+		{
+			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 8, 4);
+		}
+
+		void SetHibThreshold(uint8_t value)
+		{
+			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 8, 4);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::HibCfg)] = true;
+		}
+
+		uint8_t GetHibEnterTime() const
+		{
+			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 12, 3);
+		}
+
+		void SetHibEnterTime(uint8_t value)
+		{
+			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 12, 3);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::HibCfg)] = true;
+		}
+
+		bool IsHibernationEnabled() const
+		{
+			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 15, 1);
+		}
+
+		void SetHibernationEnabled(bool value)
+		{
+			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 15, 1);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::HibCfg)] = true;
+		}
+
+		void SetCommand(Command command)
+		{
+			RegUtils::Write<Command, std::endian::little>(command, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Command), 0, 16);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::Command)] = true;
+		}
+
+		Command GetCommand()
+		{
+			return RegUtils::Read<Command, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Command), 0, 16);
+		}
+
+		/// <summary>
+		/// Assumes 0.010 Ohm sense resistor.
+		/// </summary>
+		/// <param name="valueMah">Battery capacity in mAh</param>
+		void SetDesignCapacity(MicroAmpereHours valueMah)
+		{
+			uint16_t value = valueMah.ToRaw();
+			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::DesignCap), 0, 16);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::DesignCap)] = true;
+		}
+
+		/// <summary>
+		/// Assumes 0.010 Ohm sense resistor.
+		/// </summary>
+		/// <returns>Battery capacity in mAh</returns>
+		MicroAmpereHours GetDesignCapacity() const
+		{
+			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::DesignCap), 0, 16);
+			return MicroAmpereHours::FromRaw(value);
+		}
+
 	private:
 		I2CDriver& m_Driver;
 		std::array<uint8_t, MemorySize> m_MemoryBuffer{ 0 };

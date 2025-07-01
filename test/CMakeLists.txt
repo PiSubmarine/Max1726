@@ -5,7 +5,7 @@ include(FetchContent)
 project(PiSubmarine.Max1726.Test LANGUAGES CXX)
 
 set(PiSubmarine.Max1726.Test.Sources 
-	"PiSubmarine/Max1726/Max1726Test.cpp")
+	"PiSubmarine/Max1726/Max1726Test.cpp" "PiSubmarine/Max1726/UnitsTest.cpp")
 
 enable_testing()
 
