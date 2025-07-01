@@ -290,7 +290,7 @@ namespace PiSubmarine::Max1726
 					}
 
 					auto fstat = GetFStat();
-					bool dnr = fstat & FStat::DataNotReady;
+					bool dnr = RegUtils::HasAllFlags(fstat, FStat::DataNotReady);
 					if (!dnr)
 					{
 						break;
@@ -373,7 +373,7 @@ namespace PiSubmarine::Max1726
 					break;
 				}
 
-				status &= RegUtils::operator~(Status::PowerOnReset);
+				status = RegUtils::operator&(status, RegUtils::operator~(Status::PowerOnReset));
 				SetStatus(status);
 				if (!WriteAndWait(RegOffset::Status, waitFunc))
 				{
