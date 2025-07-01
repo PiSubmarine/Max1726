@@ -16,7 +16,8 @@ namespace PiSubmarine::Max1726
 
         constexpr int64_t GetMicroVolts() const
         {
-            return value >> BitShift;
+            uint64_t temp = value >> BitShift;
+            return static_cast<int64_t>(temp);
         }
 
         // Convert from raw 16-bit device value (0.078125 mV per LSB)
