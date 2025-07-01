@@ -204,6 +204,17 @@ namespace PiSubmarine::Max1726
 			return Read(static_cast<uint8_t>(reg), m_MemoryBuffer.data() + static_cast<size_t>(reg), regSize, regs);
 		}
 
+		bool ReadAndWait(RegOffset reg, WaitFunc waitFunc)
+		{
+			if (!Read(reg))
+			{
+				return false;
+			}
+
+			WaitForTransaction(waitFunc);
+			return !HasError();
+		}
+
 		/// <summary>
 		/// Writes specific register.
 		/// </summary>
