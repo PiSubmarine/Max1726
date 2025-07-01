@@ -5,10 +5,10 @@
 
 struct MilliCelsius
 {
-    constexpr static size_t BitShift = 8;
+    constexpr static size_t BitShift = 5;
 
     // Constructor
-    constexpr explicit MilliCelsius(int64_t mC = 0) : value(mC) {}
+    constexpr explicit MilliCelsius(int64_t mC = 0) : value(mC << BitShift) {}
 
     constexpr int64_t GetMilliCelsius() const
     {
@@ -18,34 +18,33 @@ struct MilliCelsius
     // Convert from raw device value (uint16_t with 2's complement) to MilliCelsius
     static constexpr MilliCelsius FromRaw(int16_t raw)
     {
-        int64_t temp = raw * 256;
+        int64_t temp = (raw << BitShift) * 1000ULL / 256ULL;
         MilliCelsius result;
         result.value = temp;
         return result;
     }
 
     // Convert back to raw device value (uint16_t with 2's complement)
-    constexpr uint16_t ToRaw() const
+    constexpr int16_t ToRaw() const
     {
-        int64_t temp = value * 32 + 62;
-        int64_t raw = temp / 125;
-
-        if (raw > std::numeric_limits<int16_t>::max()) raw = std::numeric_limits<int16_t>::max();
-        if (raw < std::numeric_limits<int16_t>::min()) raw = std::numeric_limits<int16_t>::min();
-
-        return static_cast<uint16_t>(static_cast<int16_t>(raw)); // reinterpret as uint16_t
+        int64_t temp = (value * 256 / 1000) >> BitShift;
+        return static_cast<int16_t>(temp);
     }
 
 
     // Arithmetic operators
     constexpr MilliCelsius operator+(const MilliCelsius& other) const
     {
-        return MilliCelsius(this->value + other.value);
+        MilliCelsius result;
+        result.value = this->value + other.value;
+        return result;
     }
 
     constexpr MilliCelsius operator-(const MilliCelsius& other) const
     {
-        return MilliCelsius(this->value - other.value);
+        MilliCelsius result;
+        result.value = this->value - other.value;
+        return result;
     }
 
     constexpr MilliCelsius& operator+=(const MilliCelsius& other)
@@ -60,6 +59,8 @@ struct MilliCelsius
         return *this;
     }
 
+    friend constexpr MilliCelsius operator"" _mC(long double mC);
+
 private:
     int64_t value;
 };
@@ -71,7 +72,10 @@ constexpr MilliCelsius operator"" _mC(unsigned long long mC)
 }
 
 // Double literal (PC-only)
-inline MilliCelsius operator"" _mC(long double mC)
+constexpr MilliCelsius operator"" _mC(long double mC)
 {
-    return MilliCelsius(static_cast<int64_t>(mC * 1000.0));
+    uint64_t value = static_cast<uint64_t>(mC * (1 << MilliCelsius::BitShift));
+    MilliCelsius result;
+    result.value = value;
+    return result;
 }
