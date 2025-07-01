@@ -255,7 +255,7 @@ namespace PiSubmarine::Max1726
 			{
 				waitFunc(std::chrono::milliseconds(10));
 			}
-			return HasError();
+			return !HasError();
 		}
 
 		/// <summary>
