@@ -9,6 +9,7 @@
 #include <bitset>
 #include <cstdint>
 #include <functional>
+#include <chrono>
 
 namespace PiSubmarine::Max1726
 {
