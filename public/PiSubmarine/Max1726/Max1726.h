@@ -546,7 +546,7 @@ namespace PiSubmarine::Max1726
 			return RegUtils::Read<ModelId, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 4, 4);
 		}
 
-		void SetModelId(ModelId value) const
+		void SetModelId(ModelId value)
 		{
 			RegUtils::Write<ModelId, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 4, 4);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::ModelCfg)] = true;
@@ -557,7 +557,7 @@ namespace PiSubmarine::Max1726
 			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 10, 1);
 		}
 
-		void SetHighChargeVoltage(bool value) const
+		void SetHighChargeVoltage(bool value)
 		{
 			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 10, 1);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::ModelCfg)] = true;
@@ -568,7 +568,7 @@ namespace PiSubmarine::Max1726
 			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 15, 1);
 		}
 
-		void SetModelRefreshFlag(bool value) const
+		void SetModelRefreshFlag(bool value)
 		{
 			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 10, 1);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::ModelCfg)] = true;
