@@ -262,7 +262,7 @@ namespace PiSubmarine::Max1726
 		/// Initializes MAX1726 in blocking mode. Must be called on every power cycle.
 		/// </summary>
 		/// <returns>True if initialization was successfull.</returns>
-		bool InitBlocking(WaitFunc waitFunc, MicroAmpereHours designCapacity, MicroAmperes terminationCurrent, MicroVolts emptyVoltage)
+		bool InitBlocking(WaitFunc waitFunc, MicroAmpereHours designCapacity, MicroAmperes terminationCurrent, MicroVolts emptyVoltage, bool forceReset = false)
 		{
 
 			if (!Read(RegOffset::Status))
@@ -276,7 +276,7 @@ namespace PiSubmarine::Max1726
 
 			auto status = GetStatus();
 
-			if (RegUtils::HasAllFlags(status, Status::PowerOnReset))
+			if (RegUtils::HasAllFlags(status, Status::PowerOnReset) || forceReset)
 			{
 				while (true)
 				{
