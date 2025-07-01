@@ -138,6 +138,7 @@ namespace PiSubmarine::Max1726
 	enum class Command : uint16_t
 	{
 		Clear = 0,
+		Reset = 0x0F,
 		SoftWakeup = 0x0090
 	};
 
@@ -265,6 +266,18 @@ namespace PiSubmarine::Max1726
 		bool InitBlocking(WaitFunc waitFunc, MicroAmpereHours designCapacity, MicroAmperes terminationCurrent, MicroVolts emptyVoltage, bool forceReset = false)
 		{
 
+			if (forceReset)
+			{
+				SetCommand(Command::Reset);
+				if (!WriteAndWait(RegOffset::Command, waitFunc))
+				{
+					return false;
+				}
+				waitFunc(std::chrono::milliseconds(500));
+				RegUtils::Write(0x01, m_MemoryBuffer.data() + RegOffset::Config2, 0, 16);
+				waitFunc(std::chrono::milliseconds(500));
+			}
+
 			if (!Read(RegOffset::Status))
 			{
 				return false;
@@ -276,7 +289,7 @@ namespace PiSubmarine::Max1726
 
 			auto status = GetStatus();
 
-			if (RegUtils::HasAllFlags(status, Status::PowerOnReset) || forceReset)
+			if (RegUtils::HasAllFlags(status, Status::PowerOnReset))
 			{
 				while (true)
 				{
