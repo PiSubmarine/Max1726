@@ -300,17 +300,17 @@ namespace PiSubmarine::Max1726
 
 				uint16_t hibCfg = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
 				SetCommand(Command::SoftWakeup);
-				if (!WriteAndWait(RegOffset::Command))
+				if (!WriteAndWait(RegOffset::Command, waitFunc))
 				{
 					return false;
 				}
 				RegUtils::Write<uint16_t, std::endian::little>(0, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
-				if (!WriteAndWait(RegOffset::Command))
+				if (!WriteAndWait(RegOffset::Command, waitFunc))
 				{
 					return false;
 				}
 				SetCommand(Command::Clear);
-				if (!WriteAndWait(RegOffset::Command))
+				if (!WriteAndWait(RegOffset::Command, waitFunc))
 				{
 					return false;
 				}
@@ -351,7 +351,7 @@ namespace PiSubmarine::Max1726
 				}
 				
 				RegUtils::Write<uint16_t, std::endian::little>(hibCfg, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
-				if (!WriteAndWait(RegOffset::HibCfg))
+				if (!WriteAndWait(RegOffset::HibCfg, waitFunc))
 				{
 					return false;
 				}				
