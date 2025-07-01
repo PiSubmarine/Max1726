@@ -295,7 +295,7 @@ namespace PiSubmarine::Max1726
 					{
 						break;
 					}
-					waitFunc(10ms);
+					waitFunc(std::chrono::milliseconds(10));
 				}
 
 				uint16_t hibCfg = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
@@ -347,7 +347,7 @@ namespace PiSubmarine::Max1726
 					{
 						break;
 					}
-					waitFunc(10ms);
+					waitFunc(std::chrono::milliseconds(10));
 				}
 				
 				RegUtils::Write<uint16_t, std::endian::little>(hibCfg, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
