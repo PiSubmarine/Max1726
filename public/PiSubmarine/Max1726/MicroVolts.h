@@ -14,15 +14,15 @@ namespace PiSubmarine::Max1726
         // Constructor
         constexpr explicit MicroVolts(uint64_t uV = 0) : value(uV << BitShift) {}
 
-        constexpr int64_t GetMicroVolts() const
+        constexpr uint64_t GetMicroVolts() const
         {
             uint64_t temp = value >> BitShift;
-            return static_cast<int64_t>(temp);
+            return temp;
         }
 
-        constexpr int32_t GetMilliVolts() const
+        constexpr uint32_t GetMilliVolts() const
         {
-            return static_cast<int32_t>(GetMicroVolts());
+            return static_cast<uint32_t>(GetMicroVolts());
         }
 
         // Convert from raw 16-bit device value (0.078125 mV per LSB)
