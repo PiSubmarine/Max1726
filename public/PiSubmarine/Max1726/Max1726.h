@@ -276,7 +276,7 @@ namespace PiSubmarine::Max1726
 
 			auto status = GetStatus();
 
-			if (status & Status::PowerOnReset)
+			if (RegUtils::HasAllFlags(status, Status::PowerOnReset))
 			{
 				while (true)
 				{
