@@ -181,17 +181,6 @@ namespace PiSubmarine::Max1726
 		}
 
 		/// <summary>
-		/// Reads all registers.
-		/// </summary>
-		/// <returns>True if transaction was successfully started.</returns>
-		bool Read()
-		{
-			std::bitset<MemorySize> regs;
-			regs.set();
-			return Read(0, m_MemoryBuffer.data(), m_MemoryBuffer.size(), regs);
-		}
-
-		/// <summary>
 		/// Reads specific register.
 		/// </summary>
 		/// <param name="reg">Register offset</param>
@@ -293,11 +282,7 @@ namespace PiSubmarine::Max1726
 				waitFunc(std::chrono::milliseconds(500));
 			}
 
-			if (!Read(RegOffset::Status))
-			{
-				return false;
-			}
-			if (!WaitForTransaction(waitFunc))
+			if (!ReadAndWait(RegOffset::Status, waitFunc))
 			{
 				return false;
 			}
@@ -308,11 +293,7 @@ namespace PiSubmarine::Max1726
 			{
 				while (true)
 				{
-					if (!Read(RegOffset::FStat))
-					{
-						return false;
-					}
-					if (!WaitForTransaction(waitFunc))
+					if (!ReadAndWait(RegOffset::FStat, waitFunc))
 					{
 						return false;
 					}
@@ -362,11 +343,7 @@ namespace PiSubmarine::Max1726
 
 				while (true)
 				{
-					if (!Read(RegOffset::ModelCfg))
-					{
-						return false;
-					}
-					if (!WaitForTransaction(waitFunc))
+					if (!ReadAndWait(RegOffset::ModelCfg, waitFunc))
 					{
 						return false;
 					}
@@ -407,15 +384,6 @@ namespace PiSubmarine::Max1726
 				{
 					return false;
 				}
-			}
-
-			if (!Read())
-			{
-				return false;
-			}
-			if (!WaitForTransaction(waitFunc))
-			{
-				return false;
 			}
 
 			return true;

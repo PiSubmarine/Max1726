@@ -7,7 +7,7 @@ using namespace std::chrono_literals;
 
 namespace PiSubmarine::Max1726
 {
-	TEST(Max1726Test, Status)
+	TEST(Max1726Test, Instantiation)
 	{
 		
 
