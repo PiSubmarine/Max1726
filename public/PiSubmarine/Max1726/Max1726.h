@@ -678,7 +678,7 @@ namespace PiSubmarine::Max1726
 		MicroVolts GetVCell() const
 		{
 			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VCell), 0, 16);
-			return MicroVolts::FromRaw(scaled);
+			return MicroVolts::FromRaw(value);
 		}
 
 		ConfigFlags GetConfig() const
