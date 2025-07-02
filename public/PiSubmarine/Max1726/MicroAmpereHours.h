@@ -9,7 +9,7 @@ namespace PiSubmarine::Max1726
 
     struct MicroAmpereHours
     {
-        constexpr static size_t BitShift = 2;
+        constexpr static size_t BitShift = 0;
         constexpr static size_t RSenseMicroOhms = 10000;
 
         constexpr uint64_t GetMicroAmpereHours() const
@@ -26,7 +26,7 @@ namespace PiSubmarine::Max1726
             // 5.0 uVh per LSB = 5 uWh per Rsense (uOhm)
             // I = V / R -> uAh = raw * 5.0 / Rsense
             // Multiply raw by 5000 (to convert 5.0 to 5000 pAh)
-            uint64_t temp = ((static_cast<uint64_t>(raw) * 5000) << BitShift) / RSenseMicroOhms;
+            uint64_t temp = ((static_cast<uint64_t>(raw) * 5000000) << BitShift) / RSenseMicroOhms;
 
             MicroAmpereHours result;
             result.value = temp;
@@ -39,7 +39,7 @@ namespace PiSubmarine::Max1726
             // raw = uAh * Rsense / 5.0
             // Multiply by Rsense first, then divide by 5000 (with rounding)
             uint64_t temp = (value * RSenseMicroOhms) >> BitShift;
-            uint64_t raw = temp / 5000;
+            uint64_t raw = temp / 5000000;
 
             return static_cast<uint16_t>(raw);
         }

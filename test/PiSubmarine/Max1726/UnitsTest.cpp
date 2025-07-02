@@ -41,17 +41,6 @@ namespace PiSubmarine::Max1726
         EXPECT_EQ(a.GetMicroAmperes(), 1000);
     }
 
-    TEST(MicroAmperesTest, FromRaw)
-    {
-        constexpr double uVFactor = 78.125 / 1000000;
-        for (int32_t max1726Value = std::numeric_limits<int16_t>::min(); max1726Value <= std::numeric_limits<int16_t>::max(); max1726Value += 1)
-        {
-            MicroAmperes current = MicroAmperes::FromRaw(max1726Value);
-            int16_t roundtrip = current.ToRaw();
-            ASSERT_EQ(roundtrip, max1726Value);
-        }
-    }
-
     // ---------------------
     // MicroVolts Tests
     // ---------------------
@@ -90,15 +79,20 @@ namespace PiSubmarine::Max1726
 
     TEST(MicroAmpereHoursTest, FromAndToRaw)
     {
-        for (int32_t max1726Value = std::numeric_limits<int16_t>::min(); max1726Value <= std::numeric_limits<int16_t>::max(); max1726Value += 1)
+        double factor = 0.5 * 1000;
+        for (uint32_t max1726Value = std::numeric_limits<uint16_t>::min(); max1726Value <= std::numeric_limits<uint16_t>::max(); max1726Value += 1)
         {
             MicroAmpereHours c = MicroAmpereHours::FromRaw(max1726Value);
-            int16_t roundtrip = c.ToRaw();
+            uint16_t roundtrip = c.ToRaw();
             if (roundtrip != max1726Value)
             {
                 ASSERT_TRUE(false);
             }
             EXPECT_EQ(roundtrip, max1726Value);
+
+            auto uAhi = c.GetMicroAmpereHours();
+            double uAhD = max1726Value * factor;
+            EXPECT_NEAR(static_cast<double>(uAhi), uAhD, 1.0);
         }
     }
 
