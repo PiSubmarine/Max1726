@@ -149,6 +149,25 @@ namespace PiSubmarine::Max1726
 		LiFePo = 6
 	};
 
+	enum class ConfigFlags : uint16_t
+	{
+		BatteryRemoved = (1 << 0),
+		BatteryInserted = (1 << 1),
+		AlertEnable = (1 << 2),
+		ForceThermistorBias = (1 << 3),
+		EnableThermistor = (1 << 4),
+		CommShutdown = (1 << 6),
+		Shutdown = (1 << 7),
+		TemperatureExternal = (1 << 8),
+		EnableTemperatureChannel = (1 << 9),
+		ThPinShutdown = (1 << 10),
+		CurrentAlertSticky = (1 << 11),
+		VoltageAlertSticky = (1 << 12),
+		TemperatureAlertSticky = (1 << 13),
+		SocAlertSticky = (1 << 14),
+		TSel = (1 << 15)
+	};
+
 	constexpr static size_t MemorySize = 225;
 
 	template<PiSubmarine::Api::Internal::I2C::DriverConcept I2CDriver>
@@ -661,6 +680,17 @@ namespace PiSubmarine::Max1726
 			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VCell), 0, 16);
 			uint16_t scaled = value * 4 / 10;
 			return MicroVolts::FromRaw(scaled);
+		}
+
+		ConfigFlags GetConfig() const
+		{
+			return RegUtils::Read<Config1Flags, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Config), 0, 16);
+		}
+
+		void SetConfig(ConfigFlags value)
+		{
+			RegUtils::Write<ConfigFlags, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Config), 0, 16);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::Config1)] = true;
 		}
 
 	private:
