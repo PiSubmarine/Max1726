@@ -583,6 +583,79 @@ namespace PiSubmarine::Max1726
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::ModelCfg)] = true;
 		}
 
+		MicroAmpereHours GetRemainingCapacity() const
+		{
+			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RepCap), 0, 16);
+			return MicroAmpereHours::FromRaw(value);
+		}
+
+		MicroAmpereHours GetEstimatedFullCapacity() const
+		{
+			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::FullCapRep), 0, 16);
+			return MicroAmpereHours::FromRaw(value);
+		}
+
+		MicroAmpereHours GetNominalFullCapacity() const
+		{
+			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::FullCapNom), 0, 16);
+			return MicroAmpereHours::FromRaw(value);
+		}
+
+		void SetNominalFullCapacity(MicroAmpereHours cap)
+		{
+			uint16_t value = cap.ToRaw();
+			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::FullCapNom), 0, 16);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::FullCapNom)] = true;
+		}
+
+		uint16_t GetRemainingSoc() const
+		{
+			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RepCap), 0, 16);
+		}
+
+		MicroAmperes GetCurrent() const
+		{
+			int16_t value = RegUtils::Read<int16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Current), 0, 16);
+			return MicroAmperes::FromRaw(value);
+		}
+
+		uint16_t GetTimeToEmpty() const
+		{
+			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TTE), 0, 16);
+		}
+
+		uint16_t GetTimeToFull() const
+		{
+			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TTF), 0, 16);
+		}
+
+		uint16_t GetCycles() const
+		{
+			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Cycles), 0, 16);
+		}
+
+		uint16_t GetRcomp0() const
+		{
+			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RComp0), 0, 16);
+		}
+
+		void SetRcomp0(uint16_t value)
+		{
+			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RComp0), 0, 16);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::RComp0)] = true;
+		}
+
+		uint16_t GetTempCo() const
+		{
+			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TempCo), 0, 16);
+		}
+
+		void SetTempComp(uint16_t value)
+		{
+			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TempCo), 0, 16);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::TempCo)] = true;
+		}
+
 	private:
 		I2CDriver& m_Driver;
 		std::array<uint8_t, MemorySize> m_MemoryBuffer{ 0 };
