@@ -683,13 +683,13 @@ namespace PiSubmarine::Max1726
 
 		ConfigFlags GetConfig() const
 		{
-			return RegUtils::Read<Config1Flags, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Config), 0, 16);
+			return RegUtils::Read<ConfigFlags, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Config), 0, 16);
 		}
 
 		void SetConfig(ConfigFlags value)
 		{
 			RegUtils::Write<ConfigFlags, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Config), 0, 16);
-			m_DirtyRegs[RegUtils::ToInt(RegOffset::Config1)] = true;
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::Config)] = true;
 		}
 
 	private:
