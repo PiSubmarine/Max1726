@@ -610,7 +610,7 @@ namespace PiSubmarine::Max1726
 
 		uint16_t GetRemainingSoc() const
 		{
-			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RepCap), 0, 16);
+			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RepSOC), 0, 16);
 		}
 
 		MicroAmperes GetCurrent() const
