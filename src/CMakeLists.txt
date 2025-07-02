@@ -7,4 +7,4 @@ PiSubmarineAddDependency("https://github.com/PiSubmarine/RegUtils" "")
 target_link_libraries(PiSubmarine.Max1726 PUBLIC PiSubmarine.RegUtils)
 
 PiSubmarineAddDependency("https://github.com/PiSubmarine/Api.Internal.I2C" "")
-target_link_libraries(PiSubmarine.Max1726 INTERFACE PiSubmarine.Api.Internal.I2C)
+target_link_libraries(PiSubmarine.Max1726 PUBLIC PiSubmarine.Api.Internal.I2C)
