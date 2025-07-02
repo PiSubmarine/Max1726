@@ -656,6 +656,13 @@ namespace PiSubmarine::Max1726
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::TempCo)] = true;
 		}
 
+		MicroVolts GetVCell() const
+		{
+			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VCell), 0, 16);
+			uint16_t scaled = value * 4 / 10;
+			return MicroVolts::FromRaw(scaled);
+		}
+
 	private:
 		I2CDriver& m_Driver;
 		std::array<uint8_t, MemorySize> m_MemoryBuffer{ 0 };
