@@ -293,7 +293,7 @@ namespace PiSubmarine::Max1726
 					return false;
 				}
 				waitFunc(std::chrono::milliseconds(500));
-				RegUtils::Write<uint16_t>(0x01, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Config2), 0, 16);
+				RegUtils::WriteUint16LE(0x01, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Config2), 0, 16);
 				if (!WriteAndWait(RegOffset::Command, waitFunc))
 				{
 					return false;
@@ -326,13 +326,14 @@ namespace PiSubmarine::Max1726
 					waitFunc(std::chrono::milliseconds(10));
 				}
 
-				uint16_t hibCfg = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
+				uint16_t hibCfg = RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
 				SetCommand(Command::SoftWakeup);
 				if (!WriteAndWait(RegOffset::Command, waitFunc))
 				{
 					return false;
 				}
-				RegUtils::Write<uint16_t, std::endian::little>(0, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
+				
+				RegUtils::WriteUint16LE(0, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
 				if (!WriteAndWait(RegOffset::Command, waitFunc))
 				{
 					return false;
@@ -374,7 +375,7 @@ namespace PiSubmarine::Max1726
 					waitFunc(std::chrono::milliseconds(10));
 				}
 				
-				RegUtils::Write<uint16_t, std::endian::little>(hibCfg, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
+				RegUtils::WriteUint16LE(hibCfg, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 16);
 				if (!WriteAndWait(RegOffset::HibCfg, waitFunc))
 				{
 					return false;
@@ -410,23 +411,23 @@ namespace PiSubmarine::Max1726
 
 		Status GetStatus() const
 		{
-			return RegUtils::Read<Status, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Status), 0, 16);
+			return static_cast<Status>(RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Status), 0, 16));
 		}
 
 		void SetStatus(Status value)
 		{
-			RegUtils::Write<Status, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Status), 0, 16);
+			RegUtils::WriteUint16LE(RegUtils::ToInt(value), m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Status), 0, 16);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::Status)] = true;
 		}
 
 		FStat GetFStat() const
 		{
-			return RegUtils::Read<FStat, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::FStat), 0, 16);
+			return static_cast<FStat>(RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::FStat), 0, 16));
 		}
 
 		uint8_t GetHibScalar() const
 		{
-			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 3);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 3);
 		}
 
 		/// <summary>
@@ -435,13 +436,13 @@ namespace PiSubmarine::Max1726
 		/// <param name="value"></param>
 		void SetHibScalar(uint8_t value)
 		{
-			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 3);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 3);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::HibCfg)] = true;
 		}
 
 		uint8_t GetHibExitTime() const
 		{
-			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 3);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 0, 3);
 		}
 
 		// Sets the required time period of consecutive current readings above the HibThreshold value before the IC exits hibernate and returns to active mode of operation
@@ -453,40 +454,40 @@ namespace PiSubmarine::Max1726
 		/// <param name="value"></param>
 		void SetHibExitTime(uint8_t value)
 		{
-			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 3, 2);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 3, 2);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::HibCfg)] = true;
 		}
 
 		uint8_t GetHibThreshold() const
 		{
-			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 8, 4);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 8, 4);
 		}
 
 		void SetHibThreshold(uint8_t value)
 		{
-			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 8, 4);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 8, 4);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::HibCfg)] = true;
 		}
 
 		uint8_t GetHibEnterTime() const
 		{
-			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 12, 3);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 12, 3);
 		}
 
 		void SetHibEnterTime(uint8_t value)
 		{
-			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 12, 3);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 12, 3);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::HibCfg)] = true;
 		}
 
 		bool IsHibernationEnabled() const
 		{
-			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 15, 1);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 15, 1);
 		}
 
 		void SetHibernationEnabled(bool value)
 		{
-			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 15, 1);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::HibCfg), 15, 1);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::HibCfg)] = true;
 		}
 
@@ -498,7 +499,7 @@ namespace PiSubmarine::Max1726
 
 		Command GetCommand()
 		{
-			return RegUtils::Read<Command, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Command), 0, 16);
+			return static_cast<Command>(RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Command), 0, 16));
 		}
 
 		/// <summary>
@@ -508,7 +509,7 @@ namespace PiSubmarine::Max1726
 		void SetDesignCapacity(MicroAmpereHours valueMah)
 		{
 			uint16_t value = valueMah.ToRaw();
-			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::DesignCap), 0, 16);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::DesignCap), 0, 16);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::DesignCap)] = true;
 		}
 
@@ -518,7 +519,7 @@ namespace PiSubmarine::Max1726
 		/// <returns>Battery capacity in mAh</returns>
 		MicroAmpereHours GetDesignCapacity() const
 		{
-			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::DesignCap), 0, 16);
+			uint16_t value = RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::DesignCap), 0, 16);
 			return MicroAmpereHours::FromRaw(value);
 		}
 
@@ -529,7 +530,7 @@ namespace PiSubmarine::Max1726
 		void SetTerminationCurrent(MicroAmperes valueMa)
 		{
 			int16_t value = valueMa.ToRaw();
-			RegUtils::Write<int16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::IChgTerm), 0, 16);
+			RegUtils::WriteUint16LE(std::bit_cast<int16_t>(value), m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::IChgTerm), 0, 16);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::IChgTerm)] = true;
 		}
 
@@ -539,156 +540,156 @@ namespace PiSubmarine::Max1726
 		/// <returns>Battery capacity in mAh</returns>
 		MicroAmperes GetTerminationCurrent() const
 		{
-			int16_t value = RegUtils::Read<int16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::DesignCap), 0, 16);
+			int16_t value = RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::DesignCap), 0, 16);
 			return MicroAmperes::FromRaw(value);
 		}
 
 		void SetEmptyVoltage(MicroVolts valueUv)
 		{
 			uint16_t value = valueUv.GetMicroVolts() / 10000;
-			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 7, 16);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 7, 16);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::VEmpty)] = true;
 		}
 
 		MicroVolts GetEmptyVoltage() const
 		{
-			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 7, 16);
+			uint16_t value = RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 7, 16);
 			return MicroVolts(value * 10000);
 		}
 
 		void SetRecoveryVoltage(MicroVolts valueUv)
 		{
 			uint16_t value = valueUv.GetMicroVolts() / 40000;
-			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 0, 7);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 0, 7);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::VEmpty)] = true;
 		}
 
 		MicroVolts GetRecoveryVoltage() const
 		{
-			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 0, 7);
+			uint16_t value = RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VEmpty), 0, 7);
 			return MicroVolts(value * 40000);
 		}
 
 		ModelId GetModelId() const
 		{
-			return RegUtils::Read<ModelId, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 4, 4);
+			return static_cast<ModelId>(RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 4, 4));
 		}
 
 		void SetModelId(ModelId value)
 		{
-			RegUtils::Write<ModelId, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 4, 4);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 4, 4);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::ModelCfg)] = true;
 		}
 
 		bool IsHighChargeVoltage() const
 		{
-			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 10, 1);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 10, 1);
 		}
 
 		void SetHighChargeVoltage(bool value)
 		{
-			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 10, 1);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 10, 1);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::ModelCfg)] = true;
 		}
 
 		bool IsModelRefreshFlagSet() const
 		{
-			return RegUtils::Read<uint8_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 15, 1);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 15, 1);
 		}
 
 		void SetModelRefreshFlag(bool value)
 		{
-			RegUtils::Write<uint8_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 10, 1);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::ModelCfg), 10, 1);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::ModelCfg)] = true;
 		}
 
 		MicroAmpereHours GetRemainingCapacity() const
 		{
-			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RepCap), 0, 16);
+			uint16_t value = RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RepCap), 0, 16);
 			return MicroAmpereHours::FromRaw(value);
 		}
 
 		MicroAmpereHours GetEstimatedFullCapacity() const
 		{
-			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::FullCapRep), 0, 16);
+			uint16_t value = RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::FullCapRep), 0, 16);
 			return MicroAmpereHours::FromRaw(value);
 		}
 
 		MicroAmpereHours GetNominalFullCapacity() const
 		{
-			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::FullCapNom), 0, 16);
+			uint16_t value = RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::FullCapNom), 0, 16);
 			return MicroAmpereHours::FromRaw(value);
 		}
 
 		void SetNominalFullCapacity(MicroAmpereHours cap)
 		{
 			uint16_t value = cap.ToRaw();
-			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::FullCapNom), 0, 16);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::FullCapNom), 0, 16);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::FullCapNom)] = true;
 		}
 
 		uint16_t GetRemainingSoc() const
 		{
-			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RepSOC), 0, 16);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RepSOC), 0, 16);
 		}
 
 		MicroAmperes GetCurrent() const
 		{
-			int16_t value = RegUtils::Read<int16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Current), 0, 16);
+			int16_t value = RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Current), 0, 16);
 			return MicroAmperes::FromRaw(value);
 		}
 
 		uint16_t GetTimeToEmpty() const
 		{
-			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TTE), 0, 16);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TTE), 0, 16);
 		}
 
 		uint16_t GetTimeToFull() const
 		{
-			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TTF), 0, 16);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TTF), 0, 16);
 		}
 
 		uint16_t GetCycles() const
 		{
-			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Cycles), 0, 16);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Cycles), 0, 16);
 		}
 
 		uint16_t GetRcomp0() const
 		{
-			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RComp0), 0, 16);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RComp0), 0, 16);
 		}
 
 		void SetRcomp0(uint16_t value)
 		{
-			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RComp0), 0, 16);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RComp0), 0, 16);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::RComp0)] = true;
 		}
 
 		uint16_t GetTempCo() const
 		{
-			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TempCo), 0, 16);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TempCo), 0, 16);
 		}
 
 		void SetTempComp(uint16_t value)
 		{
-			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TempCo), 0, 16);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TempCo), 0, 16);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::TempCo)] = true;
 		}
 
 		MicroVolts GetVCell() const
 		{
-			uint16_t value = RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VCell), 0, 16);
+			uint16_t value = RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::VCell), 0, 16);
 			return MicroVolts::FromRaw(value);
 		}
 
 		ConfigFlags GetConfig() const
 		{
-			return RegUtils::Read<ConfigFlags, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Config), 0, 16);
+			return RegUtils::ReadUint16LE(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Config), 0, 16);
 		}
 
 		void SetConfig(ConfigFlags value)
 		{
-			RegUtils::Write<ConfigFlags, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Config), 0, 16);
+			RegUtils::WriteUint16LE(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Config), 0, 16);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::Config)] = true;
 		}
 
