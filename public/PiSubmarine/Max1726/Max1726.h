@@ -746,6 +746,7 @@ namespace PiSubmarine::Max1726
 
 		void ReadCallback(uint8_t deviceAddress, std::bitset<MemorySize> regs, bool ok)
 		{
+			(void)deviceAddress;
 			m_HasError = !ok;
 			m_IsTransactionInProgress = false;
 
@@ -757,6 +758,7 @@ namespace PiSubmarine::Max1726
 
 		void WriteCallback(uint8_t deviceAddress, std::bitset<MemorySize> regs, bool ok)
 		{
+			(void)deviceAddress;
 			m_HasError = !ok;
 			m_IsTransactionInProgress = false;
 
@@ -788,6 +790,7 @@ namespace PiSubmarine::Max1726
 
 		void WriteDirtyCallback(uint8_t deviceAddress, RegOffset reg, bool ok)
 		{
+			(void)deviceAddress;
 			if (!ok)
 			{
 				m_HasError = true;
