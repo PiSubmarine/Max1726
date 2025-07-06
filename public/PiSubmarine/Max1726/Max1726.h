@@ -273,7 +273,7 @@ namespace PiSubmarine::Max1726
 		{
 			while (IsTransactionInProgress())
 			{
-				waitFunc(std::chrono::milliseconds(10));
+				waitFunc(std::chrono::milliseconds(1));
 			}
 			return !HasError();
 		}
