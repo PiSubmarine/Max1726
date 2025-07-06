@@ -676,7 +676,7 @@ namespace PiSubmarine::Max1726
 			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TempCo), 0, 16);
 		}
 
-		void SetTempComp(uint16_t value)
+		void SetTempCo(uint16_t value)
 		{
 			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::TempCo), 0, 16);
 			m_DirtyRegs[RegUtils::ToInt(RegOffset::TempCo)] = true;
