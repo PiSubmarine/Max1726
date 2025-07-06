@@ -660,6 +660,12 @@ namespace PiSubmarine::Max1726
 			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Cycles), 0, 16);
 		}
 
+		void SetCycles(uint16_t value) const
+		{
+			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::Cycles), 0, 16);
+			m_DirtyRegs[RegUtils::ToInt(RegOffset::Cycles)] = true;
+		}
+
 		uint16_t GetRcomp0() const
 		{
 			return RegUtils::Read<uint16_t, std::endian::little>(m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::RComp0), 0, 16);
