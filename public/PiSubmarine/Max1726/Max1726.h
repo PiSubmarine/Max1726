@@ -726,7 +726,7 @@ namespace PiSubmarine::Max1726
 			}
 
 			bool transactionStarted = m_Driver.ReadAsync(Address, data, size, [this, regs](uint8_t cbAddress, bool cbOk) {ReadCallback(cbAddress, regs, cbOk); });
-			if (transactionStarted)
+			if (transactionStarted && !m_IsTransactionInProgress)
 			{
 				m_IsTransactionInProgress = true;
 			}
@@ -749,7 +749,7 @@ namespace PiSubmarine::Max1726
 			memcpy(buffer.data() + 1, data, size);
 
 			bool transactionStarted = m_Driver.WriteAsync(Address, buffer.data(), buffer.size(), [this, regs](uint8_t cbAddress, bool cbOk) {WriteCallback(cbAddress, regs, cbOk); });
-			if (transactionStarted)
+			if (transactionStarted && !m_IsTransactionInProgress)
 			{
 				m_IsTransactionInProgress = true;
 			}
