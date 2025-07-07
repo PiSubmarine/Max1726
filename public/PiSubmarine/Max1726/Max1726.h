@@ -614,7 +614,7 @@ namespace PiSubmarine::Max1726
 			return MicroAmpereHours::FromRaw(value);
 		}
 
-		void SetEstimatedFullCapacity(MicroAmpereHours valueuAh) const
+		void SetEstimatedFullCapacity(MicroAmpereHours valueuAh)
 		{
 			uint16_t value = valueuAh.ToRaw();
 			RegUtils::Write<uint16_t, std::endian::little>(value, m_MemoryBuffer.data() + RegUtils::ToInt(RegOffset::FullCapRep), 0, 16);
